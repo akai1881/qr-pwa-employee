@@ -1,129 +1,141 @@
 import React, { useEffect, useState } from 'react';
 import QrReader from 'react-qr-reader';
-import Spinner from './Spinner';
+import CheckLogo from './CheckLogo';
 import {
-  compareTime,
-  shiftStartedTime,
-  parseScanData,
-  getTodaysData,
+	compareTime,
+	shiftStartedTime,
+	parseScanData,
+	convertToMinutes,
+	countMinutesLate
 } from '../helpers/functions.js';
 import { checkShift, getUserData, setShiftToDb } from '../api';
-import { Backdrop, CircularProgress } from '@material-ui/core';
+import RedCheck from '../assets/images/check_red.svg';
+import Check from '../assets/images/check.svg';
+import Spinner from '../components/Spinner';
+import AOS from 'aos';
 
-const LATE_TIME_IN_MINUTES = 610; // 10 AM in minutes
+AOS.init();
 
 const Scanner = ({ user }) => {
-  const [error, setError] = useState(false);
-  const [access, setAccess] = useState(false);
-  const [loader, setLoader] = useState(false);
-  const [check, setCheck] = useState(true);
-  const [userData, setUserData] = useState(null);
-  const [shift, setShift] = useState('');
+	const [access, setAccess] = useState(false);
+	const [loader, setLoader] = useState(true);
+	const [userData, setUserData] = useState(null);
+	const [shift, setShift] = useState('');
+	const [dueTime, setDueTime] = useState('10:00:00');
+	const [isLate, setIsLate] = useState(false);
 
-  useEffect(() => {
-    //check if user already shifted
-    const checkUser = async () => {
-      const currentDate = getTodaysData();
+	useEffect(() => {
+		// check if user already shifte
+		if (user) {
+			fetchUser();
+		}
+		checkUser();
+		return;
+	}, []);
 
-      const res = await checkShift(currentDate, user.uid);
-      if (res) {
-        setAccess(true);
-        setCheck(false);
-        setShift(shiftStartedTime(res.date.toDate()));
-        return;
-      }
-      console.log('no shift');
-    };
+	async function checkUser() {
+		console.log('respond');
+		const res = await checkShift(user.uid);
+		if (res) {
+			setLoader(false);
+			setShift(shiftStartedTime(res.date.toDate()));
+			setIsLate(res.isLate);
+			setAccess(true);
+			console.log('logged');
+		} else {
+			setLoader(false);
+		}
+	}
 
-    checkUser();
-  }, []);
+	async function fetchUser() {
+		const userData = await getUserData(user.uid);
+		setUserData({
+			email: user.email,
+			uid: user.uid,
+			firstName: userData.firstName,
+			lastName: userData.lastName,
+			role: userData.role,
+			department: userData.department.name,
+			phone: userData.phone1,
+			dueTime: userData.dueTime || '10:00:00'
+		});
+		setDueTime(userData.dueTime);
+		return;
+	}
 
-  useEffect(() => {
-    if (user) {
-      const fetchUser = async () => {
-        const userData = await getUserData(user.uid);
-        setUserData({
-          email: user.email,
-          uid: user.uid,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          role: userData.role,
-          department: userData.department.name,
-          phone: userData.phone1,
-        });
-      };
+	const handleScan = result => {
+		if (!result) return;
 
-      fetchUser();
-    }
-  }, []);
+		const permission = parseScanData(result);
 
-  const handleScan = (result) => {
-    if (!result) return;
+		if (permission) {
+			const date = new Date();
+			setShift(shiftStartedTime(date));
 
-    const permission = parseScanData(result);
+			let is_late = false;
+			let minutesLate = '';
 
-    if (permission) {
-      const date = new Date();
-      setShift(shiftStartedTime(date));
-      setLoader(true);
+			const dueTime = convertToMinutes(userData.dueTime);
 
-      let isLate = false;
+			if (compareTime(date, dueTime)) {
+				is_late = true;
+			}
 
-      if (compareTime(date, LATE_TIME_IN_MINUTES)) {
-        isLate = true;
-      }
+			if (is_late) {
+				setIsLate(true);
+				minutesLate = countMinutesLate(date, dueTime);
+			}
 
-      const userShift = {
-        ...userData,
-        date,
-        isLate,
-      };
+			const userShift = {
+				...userData,
+				date,
+				isLate: is_late,
+				minutesLate
+			};
 
-      const currentDate = getTodaysData();
+			// Push shift to firestore
+			setShiftToDb(date, userShift).then(() => {
+				setAccess(true);
+			});
+		}
+	};
 
-      // Push shift to firestore
-      setShiftToDb(currentDate, userShift).then(() => {
-        setAccess(true);
-        setLoader(false);
-      });
-    }
-  };
+	if (loader) {
+		return (
+			<div className="loader-container">
+				<Spinner loader={loader} />;
+			</div>
+		);
+	}
 
-  const handleError = (error) => {
-    console.error(error);
-  };
-  return (
-    <div className="w-full flex-c-m m-b-50 overlay" style={{ height: '100vh' }}>
-      <Backdrop open={check}>
-        <CircularProgress color="inherit" />
-      </Backdrop>
-
-      {access ? (
-        <QrReader
-          delay={500}
-          onError={handleError}
-          onScan={handleScan}
-          className="scanner"
-        />
-      ) : (
-        <div
-          className="paper flex-col-c-m"
-          style={{
-            width: '300px',
-            padding: '40px',
-            backgroundColor: '#fff',
-            borderRadius: '10px',
-          }}
-        >
-          <Spinner loader={loader} />
-          <p className="fs-18 text-center m-t-30">
-            {!loader && 'Вы вошли в систему'}
-          </p>
-          <p className="fs-18">{!loader && shift}</p>
-        </div>
-      )}
-    </div>
-  );
+	const handleError = error => {
+		console.error(error);
+	};
+	return (
+		<div className="w-full flex-c-m m-b-50 overlay" style={{ height: '100vh' }}>
+			{access ? (
+				<div
+					className="paper flex-col-c-m"
+					style={{
+						width: '300px',
+						padding: '40px',
+						backgroundColor: '#fff',
+						borderRadius: '10px'
+					}}
+				>
+					{isLate ? (
+						<img style={{ width: '90px' }} src={RedCheck} />
+					) : (
+						<img style={{ width: '90px' }} src={Check} />
+					)}
+					<p className="fs-18 text-center m-t-30">{'Вы вошли в систему'}</p>
+					<p className="fs-18">{shift}</p>
+				</div>
+			) : (
+				<QrReader delay={500} onError={handleError} onScan={handleScan} className="scanner" />
+			)}
+		</div>
+	);
 };
 
 export default Scanner;
