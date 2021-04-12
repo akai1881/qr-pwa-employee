@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import useAuth from '../context/AuthContextProvider';
+import PWAPrompt from 'react-ios-pwa-prompt'
 import AOS from 'aos';
 import logo from './../assets/images/main_logo.svg';
 import warning from './../assets/images/warning.svg';
@@ -53,6 +54,7 @@ const Login = () => {
 	};
 
 	return (
+		<>
 		<div className="limiter">
 			<div className="container-login100">
 				<div className="wrap-login100 p-t-50 p-b-50 p-l-30 p-r-30 ">
@@ -61,8 +63,8 @@ const Login = () => {
 							<img src={logo} style={{ width: '120px' }} alt="logo" />
 						</div>
 						{error && (
-							<div class="warn">
-								<img src={warning} />
+							<div className="warn">
+								<img src={warning} alt="warning"/>
 								{error}
 							</div>
 						)}
@@ -129,6 +131,9 @@ const Login = () => {
 				</div>
 			</div>
 		</div>
+		<PWAPrompt promptOnVisit={1} timesToShow={3} copyClosePrompt="Close" permanentlyHideOnDismiss={false}/>
+		</>
+		
 	);
 };
 

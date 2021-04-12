@@ -436,13 +436,13 @@ iframe {
 
 .spinner-label {
 	position: relative;
-	height: 125px;
-	width: 125px;
+	height: 110px;
+	width: 110px;
 	display: inline-block;
-	border: 2px solid rgba(255, 255, 255, 0.2);
+	border: 3px solid rgba(255, 255, 255, 0.2);
 	border-radius: 50%;
 	border-left-color: #5cb85c;
-	animation: rotate 1.2s linear infinite;
+	animation: rotate 1s linear infinite;
 }
 
 @keyframes rotate {
@@ -596,6 +596,107 @@ iframe {
 	font-family: 'Ubuntu-Bold';
 }
 
+#check polyline {
+	-webkit-animation: checkmark 0.25s ease-in-out 0.7s backwards;
+	animation: checkmark 0.25s ease-in-out 0.7s backwards;
+}
+
+#check circle {
+	-webkit-animation: checkmark-circle 0.6s ease-in-out backwards;
+	animation: checkmark-circle 0.6s ease-in-out backwards;
+}
+#check circle#colored {
+	-webkit-animation: colored-circle 0.6s ease-in-out 0.7s backwards;
+	animation: colored-circle 0.6s ease-in-out 0.7s backwards;
+}
+
+@-webkit-keyframes checkmark {
+	0% {
+		stroke-dashoffset: 100px;
+	}
+
+	100% {
+		stroke-dashoffset: 200px;
+	}
+}
+
+@-ms-keyframes checkmark {
+	0% {
+		stroke-dashoffset: 100px;
+	}
+
+	100% {
+		stroke-dashoffset: 200px;
+	}
+}
+
+@keyframes checkmark {
+	0% {
+		stroke-dashoffset: 100px;
+	}
+
+	100% {
+		stroke-dashoffset: 0px;
+	}
+}
+
+@-webkit-keyframes checkmark-circle {
+	0% {
+		stroke-dashoffset: 480px;
+	}
+
+	100% {
+		stroke-dashoffset: 960px;
+	}
+}
+
+@-ms-keyframes checkmark-circle {
+	0% {
+		stroke-dashoffset: 240px;
+	}
+
+	100% {
+		stroke-dashoffset: 480px;
+	}
+}
+
+@keyframes checkmark-circle {
+	0% {
+		stroke-dashoffset: 480px;
+	}
+
+	100% {
+		stroke-dashoffset: 960px;
+	}
+}
+
+@keyframes colored-circle {
+	0% {
+		opacity: 0;
+	}
+
+	100% {
+		opacity: 100;
+	}
+}
+
+.scanner > section {
+	width: 400px !important;
+	min-height: 600px !important;
+}
+
+.scanner > section > div {
+	top: 50% !important;
+	left: 50% !important;
+	transform: translate(-50%, -50%);
+	border: 2px solid rgba(0, 0, 0, 0.3) !important;
+	box-shadow: none !important;
+	border-radius: 12px !important;
+	z-index: 999 !important;
+	width: 290px !important;
+	height: 340px !important;
+}
+
 @media (max-width: 992px) {
 	.alert-validate::before {
 		visibility: visible;
@@ -633,6 +734,77 @@ iframe {
 	.scanner > section > div {
 		width: 250px !important;
 		height: 280px !important;
+	}
+}
+
+.semipolar-spinner,
+.semipolar-spinner * {
+	box-sizing: border-box;
+}
+
+.semipolar-spinner {
+	height: 100px;
+	width: 100px;
+	position: relative;
+}
+
+.semipolar-spinner .ring {
+	border-radius: 50%;
+	position: absolute;
+	border: calc(100px * 0.05) solid transparent;
+	border-top-color: #fff;
+	border-left-color: #fff;
+	animation: semipolar-spinner-animation 2s infinite;
+}
+
+.semipolar-spinner .ring:nth-child(1) {
+	height: calc(100px - 100px * 0.2 * 0);
+	width: calc(100px - 100px * 0.2 * 0);
+	top: calc(100px * 0.1 * 0);
+	left: calc(100px * 0.1 * 0);
+	animation-delay: calc(2000ms * 0.1 * 4);
+	z-index: 5;
+}
+
+.semipolar-spinner .ring:nth-child(2) {
+	height: calc(100px - 100px * 0.2 * 1);
+	width: calc(100px - 100px * 0.2 * 1);
+	top: calc(100px * 0.1 * 1);
+	left: calc(100px * 0.1 * 1);
+	animation-delay: calc(2000ms * 0.1 * 3);
+	z-index: 4;
+}
+
+.semipolar-spinner .ring:nth-child(3) {
+	height: calc(100px - 100px * 0.2 * 2);
+	width: calc(100px - 100px * 0.2 * 2);
+	top: calc(100px * 0.1 * 2);
+	left: calc(100px * 0.1 * 2);
+	animation-delay: calc(2000ms * 0.1 * 2);
+	z-index: 3;
+}
+
+.semipolar-spinner .ring:nth-child(4) {
+	height: calc(100px - 100px * 0.2 * 3);
+	width: calc(100px - 100px * 0.2 * 3);
+	top: calc(100px * 0.1 * 3);
+	left: calc(100px * 0.1 * 3);
+	animation-delay: calc(2000ms * 0.1 * 1);
+	z-index: 2;
+}
+
+.semipolar-spinner .ring:nth-child(5) {
+	height: calc(100px - 100px * 0.2 * 4);
+	width: calc(100px - 100px * 0.2 * 4);
+	top: calc(100px * 0.1 * 4);
+	left: calc(100px * 0.1 * 4);
+	animation-delay: calc(2000ms * 0.1 * 0);
+	z-index: 1;
+}
+
+@keyframes semipolar-spinner-animation {
+	50% {
+		transform: rotate(360deg) scale(0.7);
 	}
 }
 /*//////////////////////////////////////////////////////////////////

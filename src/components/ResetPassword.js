@@ -43,19 +43,15 @@ const ResetPassword = () => {
 			<div className="container-login100">
 				<div className="wrap-login100 p-t-50 p-b-50 p-l-30 p-r-30 ">
 					<form className="login100-form validate-form flex-sb flex-w" onSubmit={handleSubmit}>
-						<div className="img-container w-full flex-c-m m-b-20" data-aos="fade-down">
+						<div className="img-container w-full flex-c-m m-b-20">
 							<img src={logo} style={{ width: '120px' }} alt="logo" />
 						</div>
-						<div
-							className="flex-sb-m w-full p-t-3 p-b-24 reset-title"
-							data-aos="fade-up"
-							data-aos-delay="500"
-						>
+						<div className="flex-sb-m w-full p-t-3 p-b-24 reset-title" data-aos-delay="500">
 							<span>Восстановление пароля</span>
 						</div>
 
 						{error && (
-							<div class="warn">
+							<div class="warn" data-aos="">
 								<img src={warning} />
 								{error}
 							</div>
