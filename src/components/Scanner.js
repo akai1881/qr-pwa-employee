@@ -4,35 +4,52 @@ import {
   compareTime,
   shiftStartedTime,
   parseScanData,
-  countMinutesLate
+  countMinutesLate, getUserLocation
 } from '../helpers/functions.js';
 import {checkShift, getUserData, setShiftToDb, getCurrentTimeStamp} from '../api';
 import RedCheck from '../assets/images/check_red.svg';
 import Check from '../assets/images/check.svg';
 import Spinner from '../components/Spinner';
 import AOS from 'aos';
+import classifyPoint from "robust-point-in-polygon";
+import {ERROR, FAIL, polygon, SUCCESS} from "../constants";
+import Snackbar from '@material-ui/core/Snackbar';
+import MuiAlert from '@material-ui/lab/Alert';
+import {useLocationToast} from "../utils/useLocationToast";
+
 
 AOS.init();
+
 
 const Scanner = ({user}) => {
   const [access, setAccess] = useState(false);
   const [loader, setLoader] = useState(true);
   const [userData, setUserData] = useState({});
   const [shift, setShift] = useState('');
+  const [success, error, locFail, handleLocation] = useLocationToast()
+  const [location, setLocation] = useState(false);
   const [isLate, setIsLate] = useState(false);
+  const [navigator, setNavigator] = useState(window.navigator.geolocation);
+
 
   useEffect(() => {
+
+    getUserLocation(checkUserLocation, handleLocError);
+
+
     // check if user already shifted
     if (user) {
       fetchUser().then(() => console.log('success'));
     }
     checkUserShift().then(() => console.log('success'));
-  }, []);
+
+
+  }, [navigator]);
+
 
   async function checkUserShift() {
     try {
       const res = await checkShift(user.uid);
-      console.log(res);
       setShift(shiftStartedTime(res.date.toDate()));
       setIsLate(res.isLate);
       setAccess(true);
@@ -43,6 +60,20 @@ const Scanner = ({user}) => {
       setLoader(false);
     }
   }
+
+  const checkUserLocation = (position) => {
+    const {latitude, longitude} = position.coords;
+
+    const loc = classifyPoint(polygon, [latitude, longitude]);
+
+    if (loc === -1 || loc === 0) {
+      setLocation(true);
+      handleLocation(SUCCESS)
+      return;
+    }
+    handleLocation(FAIL)
+    setLocation(false);
+  };
 
   async function fetchUser() {
     const fetchedUser = await getUserData(user.uid);
@@ -61,16 +92,23 @@ const Scanner = ({user}) => {
 
   }
 
+  function Alert(props) {
+    return <MuiAlert elevation={6} variant="filled" {...props} />;
+  }
+
+  function handleLocError() {
+    handleLocation(ERROR);
+  }
+
+
   const handleScan = async result => {
     if (!result) return;
 
     const permission = parseScanData(result);
 
-    console.log('this is user data', userData)
-
     let date = new Date();
 
-    if (!permission) {
+    if (!location || !permission) {
       return;
     }
     setLoader(true);
@@ -78,7 +116,6 @@ const Scanner = ({user}) => {
     let minutesLate = 0;
     try {
       date = await getCurrentTimeStamp();
-      console.log(date)
       setShift(shiftStartedTime(date));
     } catch (e) {
       console.log(e.message);
@@ -93,9 +130,12 @@ const Scanner = ({user}) => {
     const userShift = {
       ...userData,
       date,
+      location,
       isLate: is_late,
       minutesLate
     };
+
+    console.log(userShift);
 
     setShiftToDb(date, userShift).then(() => {
       setAccess(true);
@@ -111,13 +151,51 @@ const Scanner = ({user}) => {
     );
   }
 
+
+  const handleClick = () => {
+    setLocFail(true);
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setLocFail(false);
+  };
+
+  const handleCloseError = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    setError(false);
+  };
+
   const handleError = error => {
     console.error(error);
   };
 
   return (
     <div className="w-full flex-c-m m-b-50 overlay" style={{height: '100vh'}}>
-
+      <Snackbar open={locFail} autoHideDuration={3000} onClose={handleClose}
+                anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
+        <Alert onClose={handleClose} severity="warning">
+          Геопозиция не соответcвует {location}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={error} autoHideDuration={3000} onClose={handleClose}
+                anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
+        <Alert onClose={handleClose} severity="error">
+          Предоставьте доступ к вашей локации{location}
+        </Alert>
+      </Snackbar>
+      <Snackbar open={success} autoHideDuration={3000} onClose={handleClose}
+                anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
+        <Alert onClose={handleClose} severity="error">
+          Предоставьте доступ к вашей локации{location}
+        </Alert>
+      </Snackbar>
       {access ? (
         <div
           className="paper flex-col-c-m"

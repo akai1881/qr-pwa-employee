@@ -1,7 +1,6 @@
-
 const minutesOfDay = time => time.getMinutes() + time.getHours() * 60;
 
-export const compareTime = (currentTime, userTime) => minutesOfDay(currentTime) > minutesOfDay(userTime);
+export const compareTime = (currentTime, dueTime) => minutesOfDay(currentTime) > minutesOfDay(dueTime);
 
 export const shiftStartedTime = time => {
   return `${time.toJSON().slice(0, 10).split('-').reverse().join('/')} ${time.toLocaleTimeString()}`;
@@ -16,6 +15,13 @@ export const parseScanData = data => {
     }
   }
 };
+
+export const getUserLocation = (checkUserLocation, handleLocError) => {
+  if (window.navigator.geolocation) {
+    window.navigator.geolocation.getCurrentPosition(checkUserLocation, handleLocError);
+  }
+};
+
 
 export const getTodayData = () => {
   const date = new Date();
