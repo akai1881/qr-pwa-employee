@@ -9,19 +9,19 @@ export const useLocationToast = () => {
   function handleLocation(status) {
     switch (status) {
       case ERROR:
-        setError(true);
+        setError((prev) => !prev);
         break;
 
       case SUCCESS:
-        setSuccess(true);
+        setSuccess((prev) => !prev);
         break;
 
       case  FAIL:
-        setLocFail(true);
+        setLocFail((prev) => !prev);
         break;
 
       default:
-        return 'default'
+        return 'default';
     }
   }
 

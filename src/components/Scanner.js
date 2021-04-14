@@ -26,10 +26,9 @@ const Scanner = ({user}) => {
   const [loader, setLoader] = useState(true);
   const [userData, setUserData] = useState({});
   const [shift, setShift] = useState('');
-  const [success, error, locFail, handleLocation] = useLocationToast()
+  const [success, error, locFail, handleLocation] = useLocationToast();
   const [location, setLocation] = useState(false);
   const [isLate, setIsLate] = useState(false);
-  const [navigator, setNavigator] = useState(window.navigator.geolocation);
 
 
   useEffect(() => {
@@ -44,7 +43,7 @@ const Scanner = ({user}) => {
     checkUserShift().then(() => console.log('success'));
 
 
-  }, [navigator]);
+  }, [window.navigator.geolocation]);
 
 
   async function checkUserShift() {
@@ -64,14 +63,20 @@ const Scanner = ({user}) => {
   const checkUserLocation = (position) => {
     const {latitude, longitude} = position.coords;
 
+    console.log(polygon);
+
     const loc = classifyPoint(polygon, [latitude, longitude]);
+
+    console.log(latitude, longitude);
 
     if (loc === -1 || loc === 0) {
       setLocation(true);
-      handleLocation(SUCCESS)
+      handleLocation(SUCCESS);
+      console.log(loc);
       return;
     }
-    handleLocation(FAIL)
+    handleLocation(FAIL);
+    console.log(loc);
     setLocation(false);
   };
 
@@ -152,25 +157,28 @@ const Scanner = ({user}) => {
   }
 
 
-  const handleClick = () => {
-    setLocFail(true);
-  };
-
-  const handleClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-
-    setLocFail(false);
-  };
-
   const handleCloseError = (event, reason) => {
     if (reason === 'clickaway') {
       return;
     }
-
-    setError(false);
+    handleLocation(ERROR);
   };
+
+  const handleCloseSuccess = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    handleLocation(SUCCESS);
+  };
+
+
+  const handleCloseFail = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    handleLocation(FAIL);
+  };
+
 
   const handleError = error => {
     console.error(error);
@@ -178,22 +186,22 @@ const Scanner = ({user}) => {
 
   return (
     <div className="w-full flex-c-m m-b-50 overlay" style={{height: '100vh'}}>
-      <Snackbar open={locFail} autoHideDuration={3000} onClose={handleClose}
+      <Snackbar open={locFail} autoHideDuration={3000} onClose={handleCloseFail}
                 anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
-        <Alert onClose={handleClose} severity="warning">
-          Геопозиция не соответcвует {location}
+        <Alert onClose={handleCloseFail} severity="warning">
+          Геопозиция не соответcвует <br/> или перезагрузите приложение{location}
         </Alert>
       </Snackbar>
-      <Snackbar open={error} autoHideDuration={3000} onClose={handleClose}
+      <Snackbar open={error} autoHideDuration={3000} onClose={handleCloseError}
                 anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
-        <Alert onClose={handleClose} severity="error">
-          Предоставьте доступ к вашей локации{location}
+        <Alert onClose={handleCloseError} severity="error">
+          Предоставьте доступ к вашей локации <br/> или перезагрузите приложение{location}
         </Alert>
       </Snackbar>
-      <Snackbar open={success} autoHideDuration={3000} onClose={handleClose}
+      <Snackbar open={success} autoHideDuration={3000} onClose={handleCloseSuccess}
                 anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
-        <Alert onClose={handleClose} severity="error">
-          Предоставьте доступ к вашей локации{location}
+        <Alert onClose={handleCloseSuccess} severity="success">
+          Локация определена{location}
         </Alert>
       </Snackbar>
       {access ? (
