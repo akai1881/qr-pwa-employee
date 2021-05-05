@@ -1,57 +1,52 @@
-import React, {useEffect, useState} from 'react';
-import QrReader from 'react-qr-reader';
+import React, {useEffect, useState} from "react";
+import QrReader from "react-qr-reader";
 import {
-    compareTime,
+    checkUserIsLate,
     shiftStartedTime,
     parseScanData,
-    countMinutesLate, getUserLocation
-} from '../helpers/functions.js';
-import {checkShift, getUserData, setShiftToDb, getCurrentTimeStamp} from '../api';
-import RedCheck from '../assets/images/check_red.svg';
-import Check from '../assets/images/check.svg';
-import Spinner from '../components/Spinner';
-import AOS from 'aos';
+    countMinutesLate,
+    getUserLocation,
+} from "../helpers/functions.js";
+import {checkShift, setShiftToDb, getCurrentTimeStamp} from "../api";
+import RedCheck from "../assets/images/check_red.svg";
+import Check from "../assets/images/check.svg";
+import Spinner from "../components/Spinner";
 import classifyPoint from "robust-point-in-polygon";
 import {ERROR, FAIL, polygon, SUCCESS} from "../constants";
-import Snackbar from '@material-ui/core/Snackbar';
-import MuiAlert from '@material-ui/lab/Alert';
+import Snackbar from "@material-ui/core/Snackbar";
+import MuiAlert from "@material-ui/lab/Alert";
 import {useLocationToast} from "../utils/useLocationToast";
+import useAuth from "../context/AuthContextProvider.js";
 
-
-AOS.init();
-
-
-const Scanner = ({user}) => {
+const Scanner = () => {
     const [access, setAccess] = useState(false);
     const [loader, setLoader] = useState(true);
-    const [userData, setUserData] = useState({});
-    const [shift, setShift] = useState('');
+    const {user} = useAuth();
+    const [shift, setShift] = useState("");
     const [success, error, locFail, handleLocation] = useLocationToast();
     const [location, setLocation] = useState(false);
     const [isLate, setIsLate] = useState(false);
 
 
     useEffect(() => {
-
         getUserLocation(checkUserLocation, handleLocError);
+    }, []);
 
-
+    useEffect(() => {
         // check if user already shifted
-        if (user) {
-            fetchUser().then(() => console.log('success'));
-        }
-        checkUserShift().then(() => console.log('success'));
-
-
-    }, [window.navigator.geolocation]);
-
+        checkUserShift().then(() => console.log("success"));
+        console.log(user);
+    }, []);
 
     async function checkUserShift() {
         try {
             const res = await checkShift(user.uid);
-            setShift(shiftStartedTime(res.date.toDate()));
-            setIsLate(res.isLate);
-            setAccess(true);
+            if (res?.hasScanned) {
+                setShift(shiftStartedTime(res.date.toDate()));
+                setIsLate(res.isLate);
+                setAccess(true);
+                setLoader(false);
+            }
         } catch (e) {
             console.log(e.message);
             setLoader(false);
@@ -63,9 +58,9 @@ const Scanner = ({user}) => {
     const checkUserLocation = (position) => {
         const {latitude, longitude} = position.coords;
 
-        console.log(polygon);
-
         const loc = classifyPoint(polygon, [latitude, longitude]);
+
+        console.log(position)
 
         console.log(latitude, longitude);
 
@@ -80,33 +75,16 @@ const Scanner = ({user}) => {
         setLocation(false);
     };
 
-    async function fetchUser() {
-        const fetchedUser = await getUserData(user.uid);
-
-
-        setUserData({
-            email: user.email,
-            uid: user.uid,
-            firstName: fetchedUser.firstName,
-            lastName: fetchedUser.lastName,
-            role: fetchedUser.role,
-            department: fetchedUser.department.name,
-            phone: fetchedUser.phone1,
-            dueTime: fetchedUser.dueTime.toDate() || new Date()
-        });
-
-    }
-
     function Alert(props) {
         return <MuiAlert elevation={6} variant="filled" {...props} />;
     }
 
-    function handleLocError() {
+    function handleLocError(error) {
+        console.log(error);
         handleLocation(ERROR);
     }
 
-
-    const handleScan = async result => {
+    const handleScan = async (result) => {
         if (!result) return;
 
         const permission = parseScanData(result);
@@ -115,7 +93,6 @@ const Scanner = ({user}) => {
         let is_late = false;
         let minutesLate = 0;
 
-
         if (!location || !permission) {
             return;
         }
@@ -123,26 +100,29 @@ const Scanner = ({user}) => {
         setLoader(true);
 
         try {
-            date = await getCurrentTimeStamp();
+            date = (await getCurrentTimeStamp()) || new Date();
             setShift(shiftStartedTime(date));
         } catch (e) {
             console.log(e.message);
         }
 
-        if (compareTime(date, userData.dueTime)) {
+        if (checkUserIsLate(date, user.dueTime)) {
             is_late = true;
-            minutesLate = countMinutesLate(date, userData.dueTime);
+            minutesLate = countMinutesLate(date, user.dueTime);
         }
 
         if (is_late) {
             setIsLate(true);
         }
+
         const userShift = {
-            ...userData,
+            ...user,
             date,
+            hasScanned: true,
             location,
             isLate: is_late,
-            minutesLate
+            minutesLate,
+            comment: ''
         };
 
         setShiftToDb(date, userShift).then(() => {
@@ -159,50 +139,66 @@ const Scanner = ({user}) => {
         );
     }
 
+    // TODO: Переписать логику тостеров, или использовать другую библиотеку
 
     const handleCloseError = (event, reason) => {
-        if (reason === 'clickaway') {
+        if (reason === "clickaway") {
             return;
         }
         handleLocation(ERROR);
     };
 
     const handleCloseSuccess = (event, reason) => {
-        if (reason === 'clickaway') {
+        if (reason === "clickaway") {
             return;
         }
         handleLocation(SUCCESS);
     };
 
-
     const handleCloseFail = (event, reason) => {
-        if (reason === 'clickaway') {
+        if (reason === "clickaway") {
             return;
         }
         handleLocation(FAIL);
     };
 
-
-    const handleError = error => {
+    const handleError = (error) => {
         console.error(error);
     };
 
     return (
-        <div className="w-full flex-c-m m-b-50 overlay" style={{height: '100vh'}}>
-            <Snackbar open={locFail} autoHideDuration={3000} onClose={handleCloseFail}
-                      anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
+        <div
+            className="w-full flex-c-m m-b-50 overlay"
+            style={{height: "100vh"}}
+        >
+            <Snackbar
+                open={locFail}
+                autoHideDuration={3000}
+                onClose={handleCloseFail}
+                anchorOrigin={{vertical: "top", horizontal: "center"}}
+            >
                 <Alert onClose={handleCloseFail} severity="warning">
-                    Геопозиция не соответcвует <br/> или перезагрузите приложение
+                    Геопозиция не соответcвует <br/> или перезагрузите
+                    приложение
                 </Alert>
             </Snackbar>
-            <Snackbar open={error} autoHideDuration={3000} onClose={handleCloseError}
-                      anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
+            <Snackbar
+                open={error}
+                autoHideDuration={3000}
+                onClose={handleCloseError}
+                anchorOrigin={{vertical: "top", horizontal: "center"}}
+            >
                 <Alert onClose={handleCloseError} severity="error">
-                    Предоставьте доступ к вашей локации <br/> или перезагрузите приложение
+                    Предоставьте доступ к вашей локации <br/> или перезагрузите
+                    приложение
                 </Alert>
             </Snackbar>
-            <Snackbar open={success} autoHideDuration={3000} onClose={handleCloseSuccess}
-                      anchorOrigin={{vertical: 'top', horizontal: 'center'}}>
+            <Snackbar
+                open={success}
+                autoHideDuration={3000}
+                onClose={handleCloseSuccess}
+                anchorOrigin={{vertical: "top", horizontal: "center"}}
+            >
                 <Alert onClose={handleCloseSuccess} severity="success">
                     Локация определена
                 </Alert>
@@ -213,24 +209,41 @@ const Scanner = ({user}) => {
                     data-aos="zoom-in-up"
                     data-aos-delay="300"
                     style={{
-                        width: '300px',
-                        padding: '40px',
-                        backgroundColor: '#fff',
-                        borderRadius: '10px'
+                        width: "300px",
+                        padding: "40px",
+                        backgroundColor: "#fff",
+                        borderRadius: "10px",
                     }}
                 >
                     {isLate ? (
-                        <img data-aos="flip-down" data-aos-delay="600" style={{width: '90px'}} src={RedCheck}
-                             alt="Late"/>
+                        <img
+                            data-aos="flip-down"
+                            data-aos-delay="600"
+                            style={{width: "90px"}}
+                            src={RedCheck}
+                            alt="Late"
+                        />
                     ) : (
-                        <img data-aos="flip-down" data-aos-delay="600" style={{width: '90px'}} src={Check}
-                             alt="On time"/>
+                        <img
+                            data-aos="flip-down"
+                            data-aos-delay="600"
+                            style={{width: "90px"}}
+                            src={Check}
+                            alt="On time"
+                        />
                     )}
-                    <p className="fs-18 text-center m-t-30">{'Вы вошли в систему'}</p>
+                    <p className="fs-18 text-center m-t-30">
+                        {"Вы вошли в систему"}
+                    </p>
                     <p className="fs-18">{shift}</p>
                 </div>
             ) : (
-                <QrReader delay={800} onError={handleError} onScan={handleScan} className="scanner"/>
+                <QrReader
+                    delay={800}
+                    onError={handleError}
+                    onScan={handleScan}
+                    className="scanner"
+                />
             )}
         </div>
     );

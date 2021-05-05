@@ -1,32 +1,43 @@
-const minutesOfDay = time => time.getMinutes() + time.getHours() * 60;
+const minutesOfDay = (time) => time.getMinutes() + time.getHours() * 60;
 
-export const compareTime = (currentTime, dueTime) => minutesOfDay(currentTime) > minutesOfDay(dueTime);
+export const checkUserIsLate = (currentTime, dueTime) =>
+    minutesOfDay(currentTime) > minutesOfDay(dueTime);
 
-export const shiftStartedTime = time => {
-  return `${time.toJSON().slice(0, 10).split('-').reverse().join('/')} ${time.toLocaleTimeString()}`;
+export const shiftStartedTime = (time) => {
+    return `${time
+        .toJSON()
+        .slice(0, 10)
+        .split("-")
+        .reverse()
+        .join("/")} ${time.toLocaleTimeString()}`;
 };
 
-export const parseScanData = data => {
-  try {
-    return JSON.parse(data);
-  } catch (e) {
-    if (e instanceof SyntaxError) {
-      return false;
+export const parseScanData = (data) => {
+    try {
+        return JSON.parse(data);
+    } catch (e) {
+        if (e instanceof SyntaxError) {
+            return false;
+        }
     }
-  }
 };
 
 export const getUserLocation = (checkUserLocation, handleLocError) => {
-  if (window.navigator.geolocation) {
-    window.navigator.geolocation.getCurrentPosition(checkUserLocation, handleLocError);
-  }
+    if (window.navigator.geolocation) {
+        window.navigator.geolocation.getCurrentPosition(
+            checkUserLocation,
+            handleLocError,
+            {maximumAge: 0, timeout: 1000, enableHighAccuracy: true}
+        );
+    }
 };
-
 
 export const getTodayData = () => {
-  const date = new Date();
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000).toISOString().split('T')[0];
+    const date = new Date();
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
 };
 
-
-export const countMinutesLate = (currentTime, userTime) => minutesOfDay(currentTime) - minutesOfDay(userTime);
+export const countMinutesLate = (currentTime, userTime) =>
+    minutesOfDay(currentTime) - minutesOfDay(userTime);
