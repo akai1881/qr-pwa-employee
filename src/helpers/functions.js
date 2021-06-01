@@ -27,7 +27,6 @@ export const getUserLocation = (checkUserLocation, handleLocError) => {
         window.navigator.geolocation.getCurrentPosition(
             checkUserLocation,
             handleLocError,
-            {maximumAge: 0, timeout: 1000, enableHighAccuracy: true}
         );
     }
 };

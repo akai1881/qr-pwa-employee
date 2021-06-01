@@ -1,4 +1,4 @@
-import React, {useState, createContext, useEffect, useContext} from "react";
+import React, {useState, createContext, useEffect, useContext, useRef} from "react";
 import {getUserData} from "../api";
 import {auth} from "../firebase";
 
@@ -25,21 +25,16 @@ export const AuthContextProvider = ({children}) => {
     };
 
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        const unsubscribe = auth.onAuthStateChanged(user => {
             if (!user) {
                 setLoading(false)
                 return
             }
-            const currentUserData = await getUserData(user.uid);
             setUser({
                 email: user.email,
-                uid: user.uid,
-                displayName: currentUserData.data.displayName,
-                group: currentUserData.data.groups && currentUserData.data.groups.length ? currentUserData.data.groups[0] : '',
-                dueTime: currentUserData.dueTime.toDate() || new Date(),
-            });
-            setLoading(false);
-            console.log(user)
+                uid: user.uid
+            })
+            setLoading(false)
         });
 
         return unsubscribe;
@@ -48,6 +43,7 @@ export const AuthContextProvider = ({children}) => {
     const value = {
         login,
         user,
+        setUser,
         reset,
         logout,
     };

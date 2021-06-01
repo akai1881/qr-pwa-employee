@@ -7,12 +7,12 @@ import {
     countMinutesLate,
     getUserLocation,
 } from "../helpers/functions.js";
-import {checkShift, setShiftToDb, getCurrentTimeStamp} from "../api";
+import {checkShift, setShiftToDb, getCurrentTimeStamp, getUserData} from "../api";
 import RedCheck from "../assets/images/check_red.svg";
 import Check from "../assets/images/check.svg";
 import Spinner from "../components/Spinner";
 import classifyPoint from "robust-point-in-polygon";
-import {ERROR, FAIL, polygon, SUCCESS} from "../constants";
+import {ERROR, FAIL, OLOLO_GROUP, OLOLO_POLYGON, polygon, SUCCESS} from "../constants";
 import Snackbar from "@material-ui/core/Snackbar";
 import MuiAlert from "@material-ui/lab/Alert";
 import {useLocationToast} from "../utils/useLocationToast";
@@ -21,7 +21,7 @@ import useAuth from "../context/AuthContextProvider.js";
 const Scanner = () => {
     const [access, setAccess] = useState(false);
     const [loader, setLoader] = useState(true);
-    const {user} = useAuth();
+    const {user, setUser} = useAuth();
     const [shift, setShift] = useState("");
     const [success, error, locFail, handleLocation] = useLocationToast();
     const [location, setLocation] = useState(false);
@@ -30,20 +30,26 @@ const Scanner = () => {
 
     useEffect(() => {
         getUserLocation(checkUserLocation, handleLocError);
-    }, []);
+    }, [user]);
 
     useEffect(() => {
         // check if user already shifted
-        checkUserShift().then(() => console.log("success"));
-        console.log(user);
+        setLoader(true)
+        checkUserShift().then(() => console.log('GOT USER'));
+
     }, []);
 
     async function checkUserShift() {
         try {
             const res = await checkShift(user.uid);
+            setUser({
+                ...user,
+                ...res,
+                dueTime: res.dueTime.toDate()
+            })
             if (res?.hasScanned) {
-                setShift(shiftStartedTime(res.date.toDate()));
                 setIsLate(res.isLate);
+                setShift(shiftStartedTime(res.date.toDate()));
                 setAccess(true);
                 setLoader(false);
             }
@@ -58,20 +64,25 @@ const Scanner = () => {
     const checkUserLocation = (position) => {
         const {latitude, longitude} = position.coords;
 
-        const loc = classifyPoint(polygon, [latitude, longitude]);
+        let loc;
 
-        console.log(position)
+        loc = classifyPoint(polygon, [latitude, longitude]);
+
+        if (user?.group === OLOLO_GROUP) {
+            console.log('worked')
+            loc = classifyPoint(OLOLO_POLYGON, [latitude, longitude])
+        }
+
 
         console.log(latitude, longitude);
 
         if (loc === -1 || loc === 0) {
             setLocation(true);
             handleLocation(SUCCESS);
-            console.log(loc);
             return;
         }
+
         handleLocation(FAIL);
-        console.log(loc);
         setLocation(false);
     };
 
@@ -122,7 +133,6 @@ const Scanner = () => {
             location,
             isLate: is_late,
             minutesLate,
-            comment: ''
         };
 
         setShiftToDb(date, userShift).then(() => {
