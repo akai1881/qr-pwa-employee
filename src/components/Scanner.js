@@ -12,7 +12,7 @@ import RedCheck from "../assets/images/check_red.svg";
 import Check from "../assets/images/check.svg";
 import Spinner from "../components/Spinner";
 import classifyPoint from "robust-point-in-polygon";
-import {ERROR, FAIL, OLOLO_GROUP, OLOLO_POLYGON, polygon, SUCCESS} from "../constants";
+import {ERROR, FAIL, OLOLO_GROUP, OLOLO_POLYGON, polygon, SUCCESS, TEST} from "../constants";
 import Snackbar from "@material-ui/core/Snackbar";
 import MuiAlert from "@material-ui/lab/Alert";
 import {useLocationToast} from "../utils/useLocationToast";
@@ -35,7 +35,7 @@ const Scanner = () => {
     useEffect(() => {
         // check if user already shifted
         setLoader(true)
-        checkUserShift().then(() => console.log('GOT USER'));
+        checkUserShift().then(() => console.log('ok got user'));
 
     }, []);
 
@@ -68,10 +68,15 @@ const Scanner = () => {
 
         loc = classifyPoint(polygon, [latitude, longitude]);
 
+        console.log(user)
+
+
         if (user?.group === OLOLO_GROUP) {
             console.log('worked')
             loc = classifyPoint(OLOLO_POLYGON, [latitude, longitude])
         }
+
+        console.log(loc)
 
 
         console.log(latitude, longitude);
