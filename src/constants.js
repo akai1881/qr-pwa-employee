@@ -35,7 +35,7 @@ export const SUCCESS = "success";
 export const FAIL = "fail";
 export const ERROR = "error";
 
-export const OLOLO_GROUP = '1622095181893'
+export const OLOLO_GROUP = 'ololo'
 
 // 42.867823015312844, 74.59409719455404
 // 42.86768147335755, 74.60139280307455

@@ -42,6 +42,7 @@ const Scanner = () => {
     async function checkUserShift() {
         try {
             const res = await checkShift(user.uid);
+            console.log(res, 'this is res')
             setUser({
                 ...user,
                 ...res,
@@ -68,24 +69,20 @@ const Scanner = () => {
 
         loc = classifyPoint(polygon, [latitude, longitude]);
 
-        console.log(user)
 
-
-        if (user?.group === OLOLO_GROUP) {
+        if (user?.adress === OLOLO_GROUP) {
             console.log('worked')
             loc = classifyPoint(OLOLO_POLYGON, [latitude, longitude])
         }
-
-        console.log(loc)
-
-
-        console.log(latitude, longitude);
 
         if (loc === -1 || loc === 0) {
             setLocation(true);
             handleLocation(SUCCESS);
             return;
         }
+
+        console.log(latitude, longitude);
+
 
         handleLocation(FAIL);
         setLocation(false);
