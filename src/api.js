@@ -1,47 +1,55 @@
-import { db } from './firebase';
-import { getTodayData } from './helpers/functions';
+import {db} from "./firebase";
+import {getTodayData} from "./helpers/functions";
 
-const getDateFromDb = async date => {
-	const dayRef = await db
-		.collection('shifts')
-		.where('date', '==', date)
-		.get()
-		.catch(error => console.log(error));
+export const SERVER_TIME_API = process.env.REACT_APP_SERVER_TIME_API;
 
-	return await dayRef.docs[0].ref;
+const getDateFromDb = async (date) => {
+    console.log(date)
+    const dayRef = await db
+        .collection("shifts")
+        .where("date", "==", date)
+        .get()
+        .catch((error) => console.log(error));
+
+    console.log(dayRef, 'this is ref')
+    return await dayRef.docs[0].ref;
 };
 
-export const checkShift = async userId => {
-	const currentDate = getTodayData();
+export const checkShift = async (userId) => {
+    const currentDate = getTodayData();
 
-	const userRef = await getDateFromDb(currentDate);
+    const userRef = await getDateFromDb(currentDate);
 
-	return userRef
-		.collection('users')
-		.doc(userId)
-		.get()
-		.then(doc => {
-			if (doc.exists) {
-				console.log(doc.data());
-				return doc.data();
-			} else {
-				return false;
-			}
-		});
+    return userRef
+        .collection("users")
+        .doc(userId)
+        .get()
+        .then((doc) => {
+            console.log(doc.data())
+            return doc.data()
+        });
+};
+
+export const getCurrentTimeStamp = async () => {
+    return await fetch(SERVER_TIME_API)
+        .then((res) => res.json())
+        .then((data) => new Date(data.fulldate))
+        .catch((e) => {
+            console.log(e);
+        });
 };
 
 export const setShiftToDb = async (date, userData) => {
-	const currentDate = getTodayData();
+    const currentDate = getTodayData();
 
-	const userRef = await getDateFromDb(currentDate);
+    const userRef = await getDateFromDb(currentDate);
 
-	return userRef.collection('users').doc(userData.uid).set(userData);
+    return userRef.collection("users").doc(userData.id).update(userData);
 };
 
-export const getUserData = async userId => {
-	return await db
-		.collection('users')
-		.doc(userId)
-		.get()
-		.then(doc => doc.data());
+export const getUserData = async (userId) => {
+    return await db
+        .doc("/users/" + userId)
+        .get()
+        .then((doc) => doc.data());
 };

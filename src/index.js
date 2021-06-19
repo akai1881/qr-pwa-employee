@@ -7,8 +7,6 @@ import './assets/css/animate.css';
 import './assets/css/font-awesome.min.css';
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App/>,
   document.getElementById('root')
 );
